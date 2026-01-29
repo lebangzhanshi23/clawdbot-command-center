@@ -1,0 +1,44 @@
+[
+  {
+    "id": "rename-to-cj",
+    "title": "正式更名为 CJ 并更新身份系统",
+    "status": "DONE",
+    "progress": "100%",
+    "category": "Identity"
+  },
+  {
+    "id": "update-avatar",
+    "title": "更换 GTA San Andreas 风格头像",
+    "status": "DONE",
+    "progress": "100%",
+    "category": "Identity"
+  },
+  {
+    "id": "repo-public-and-clean",
+    "title": "仓库公开化并清理所有敏感历史记录",
+    "status": "DONE",
+    "progress": "100%",
+    "category": "Security"
+  },
+  {
+    "id": "git-identity-config",
+    "title": "配置 CJ 的专属 Git 身份（git config）",
+    "status": "DONE",
+    "progress": "100%",
+    "category": "Security"
+  },
+  {
+    "id": "kanban-logic-decoupling",
+    "title": "看板逻辑重构：与用户 Obsidian 彻底解耦",
+    "status": "DONE",
+    "progress": "100%",
+    "category": "Feature"
+  },
+  {
+    "id": "为-readme-增加中文版本",
+    "title": "为 README 增加中文版本",
+    "status": "DONE",
+    "progress": "100%",
+    "category": "Task"
+  }
+]

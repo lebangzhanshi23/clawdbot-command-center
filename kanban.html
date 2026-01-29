@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CJ Task Mission Control</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+        .kanban-column {
+            background-color: #1e293b;
+            min-height: 80vh;
+            border-radius: 1rem;
+            padding: 1rem;
+            transition: all 0.3s ease;
+        }
+        .task-card {
+            background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
+            border: 1px solid #475569;
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+        }
+        .task-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+            border-color: #f97316;
+        }
+        .progress-bar {
+            height: 6px;
+            background-color: #475569;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 1rem;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #f97316 0%, #fbbf24 100%);
+            transition: width 0.5s ease-out;
+        }
+        .category-tag {
+            font-size: 0.7rem;
+            padding: 0.1rem 0.5rem;
+            border-radius: 9999px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        .tag-identity { background-color: #7c3aed; color: #ede9fe; }
+        .tag-security { background-color: #dc2626; color: #fef2f2; }
+        .tag-feature { background-color: #2563eb; color: #eff6ff; }
+        .tag-task { background-color: #475569; color: #f8fafc; }
+        
+        .glass {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="p-8">
+    <header class="flex justify-between items-center mb-10">
+        <div>
+            <h1 class="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-yellow-400">
+                CJ Task Mission Control
+            </h1>
+            <p class="text-slate-400 mt-2">老板指令执行与实时进度反馈中心</p>
+        </div>
+        <div class="flex gap-4">
+            <button onclick="fetchTasks()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg transition border border-slate-700">
+                🔄 刷新
+            </button>
+            <div class="px-4 py-2 glass rounded-lg border border-slate-700">
+                <span id="status-indicator" class="text-orange-400 animate-pulse">●</span> <span id="status-text">CJ 正在待命</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <!-- TO DO -->
+        <div class="kanban-column glass">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-semibold flex items-center gap-2">
+                    <span class="w-3 h-3 bg-slate-500 rounded-full"></span> 任务池 (TO DO)
+                </h2>
+                <span id="count-todo" class="bg-slate-800 px-2 py-1 rounded text-sm text-slate-400">0</span>
+            </div>
+            <div id="todo-list"></div>
+        </div>
+
+        <!-- IN PROGRESS -->
+        <div class="kanban-column glass">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-semibold flex items-center gap-2">
+                    <span class="w-3 h-3 bg-orange-500 rounded-full animate-ping"></span> 执行中 (ACTIVE)
+                </h2>
+                <span id="count-progress" class="bg-slate-800 px-2 py-1 rounded text-sm text-slate-400">0</span>
+            </div>
+            <div id="progress-list"></div>
+        </div>
+
+        <!-- DONE -->
+        <div class="kanban-column glass">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-semibold flex items-center gap-2">
+                    <span class="w-3 h-3 bg-emerald-500 rounded-full"></span> 已达成 (DONE)
+                </h2>
+                <span id="count-done" class="bg-slate-800 px-2 py-1 rounded text-sm text-slate-400">0</span>
+            </div>
+            <div id="done-list"></div>
+        </div>
+    </div>
+
+    <script>
+        // DATA_PLACEHOLDER - ManageTasks.py will inject data here
+        const INITIAL_TASKS = [
+  {
+    "id": "rename-to-cj",
+    "title": "正式更名为 CJ 并更新身份系统",
+    "status": "DONE",
+    "progress": "100%",
+    "category": "Identity"
+  },
+  {
+    "id": "update-avatar",
+    "title": "更换 GTA San Andreas 风格头像",
+    "status": "DONE",
+    "progress": "100%",
+    "category": "Identity"
+  },
+  {
+    "id": "repo-public-and-clean",
+    "title": "仓库公开化并清理所有敏感历史记录",
+    "status": "DONE",
+    "progress": "100%",
+    "category": "Security"
+  },
+  {
+    "id": "git-identity-config",
+    "title": "配置 CJ 的专属 Git 身份（git config）",
+    "status": "DONE",
+    "progress": "100%",
+    "category": "Security"
+  },
+  {
+    "id": "kanban-logic-decoupling",
+    "title": "看板逻辑重构：与用户 Obsidian 彻底解耦",
+    "status": "DONE",
+    "progress": "100%",
+    "category": "Feature"
+  },
+  {
+    "id": "为-readme-增加中文版本",
+    "title": "为 README 增加中文版本",
+    "status": "DONE",
+    "progress": "100%",
+    "category": "Task"
+  }
+];
+
+        async function fetchTasks() {
+            if (window.location.protocol === 'file:') {
+                console.log('Local file detected, using embedded data.');
+                document.getElementById('status-text').innerText = '本地预览模式';
+                renderTasks(INITIAL_TASKS);
+                return;
+            }
+
+            try {
+                const response = await fetch('tasks.json?t=' + new Date().getTime());
+                const tasks = await response.json();
+                renderTasks(tasks);
+            } catch (error) {
+                console.error('Failed to fetch tasks:', error);
+                renderTasks(INITIAL_TASKS); // Fallback to embedded
+            }
+        }
+
+        function renderTasks(tasks) {
+            const lists = {
+                'TO DO': document.getElementById('todo-list'),
+                'IN PROGRESS': document.getElementById('progress-list'),
+                'DONE': document.getElementById('done-list')
+            };
+
+            const counts = {
+                'TO DO': document.getElementById('count-todo'),
+                'IN PROGRESS': document.getElementById('count-progress'),
+                'DONE': document.getElementById('count-done')
+            };
+
+            Object.values(lists).forEach(list => list.innerHTML = '');
+            const stats = { 'TO DO': 0, 'IN PROGRESS': 0, 'DONE': 0 };
+
+            tasks.forEach(task => {
+                const card = document.createElement('div');
+                card.className = 'task-card';
+                
+                const categoryClass = 'tag-' + (task.category || 'task').toLowerCase();
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="category-tag ${categoryClass}">${task.category}</span>
+                        <span class="text-xs text-slate-500">ID: ${task.id.substring(0,8)}</span>
+                    </div>
+                    <h3 class="font-medium text-slate-200 mb-2">${task.title}</h3>
+                    <div class="flex justify-between text-xs text-slate-400">
+                        <span>进度</span>
+                        <span>${task.progress}</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${task.progress}"></div>
+                    </div>
+                `;
+                
+                if (lists[task.status]) {
+                    lists[task.status].appendChild(card);
+                    stats[task.status]++;
+                }
+            });
+
+            Object.keys(stats).forEach(status => {
+                if (counts[status]) counts[status].innerText = stats[status];
+            });
+        }
+
+        fetchTasks();
+        if (window.location.protocol !== 'file:') {
+            setInterval(fetchTasks, 10000);
+        }
+    </script>
+</body>
+</html>
